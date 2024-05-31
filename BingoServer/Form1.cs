@@ -1,6 +1,6 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -12,27 +12,25 @@ namespace BingoServer
     public partial class Form1 : Form
     {
         private TcpListener server;
-        private TcpClient client;
-        private NetworkStream stream;
-        private Random random = new Random();
-        // private int[] numbers = Enumerable.Range(1, 25).OrderBy(x => random.Next()).ToArray();
-        // private int[] numbers = { 23, 5, 17, 1, 11, 19, 4, 21, 14, 2, 24, 8, 13, 7, 20, 3, 10, 18, 6, 22, 15, 9, 25, 12, 16 };
-        private int[] numbers = GenerateRandomOrder(25);
-        private bool isServerTurn = true;
-
+        private List<TcpClient> clients = new List<TcpClient>();
+        private List<NetworkStream> streams = new List<NetworkStream>();
+        // private Button[,] buttons = new Button[5, 5];
+        private int[] numbers = { 23, 5, 17, 1, 11, 19, 4, 21, 14, 2, 24, 8, 13, 7, 20, 3, 10, 18, 6, 22, 15, 9, 25, 12, 16 };
+        private bool gameEnded = false;
         private int prevCount = 0, newCount = 0;
-    
+        private int currentTurn = 0; // 0: server, 1: client1, 2: client2
+
         public Form1()
         {
             InitializeComponent();
         }
 
-        private async void Form1_Load(object sender, EventArgs e)
+        private void Form1_Load(object sender, EventArgs e)
         {
             InitializeGrid();
-            await StartServer();
+            StartServer();
         }
-
+        
         private void InitializeGrid()
         {
             for (int i = 0; i < 5; i++)
@@ -40,121 +38,105 @@ namespace BingoServer
                 for (int j = 0; j < 5; j++)
                 {
                     buttons[i, j].Text = numbers[i * 5 + j].ToString();
-                    buttons[i, j].Font = new System.Drawing.Font(this.buttons[i, j].Font, FontStyle.Bold);
+                    buttons[i, j].Enabled = true;
+                    buttons[i, j].Font = new Font(this.buttons[i, j].Font, FontStyle.Bold);
                 }
             }
         }
 
-        private async Task StartServer()
+
+        private async void StartServer()
         {
             server = new TcpListener(IPAddress.Any, 5000);
             server.Start();
-            client = await server.AcceptTcpClientAsync();
-            stream = client.GetStream();
+
+            for (int i = 0; i < 2; i++)
+            {
+                var client = await server.AcceptTcpClientAsync();
+                clients.Add(client);
+                streams.Add(client.GetStream());
+
+                // Send the player number to the client
+                string playerNumberMessage = "PLAYER:" + (i + 1);
+                byte[] data = Encoding.ASCII.GetBytes(playerNumberMessage);
+                streams[i].Write(data, 0, data.Length);
+            }
+
             await Task.Run(() => ListenForMessages());
         }
-
-        // private void Button_Click(object sender, EventArgs e)
-        // {
-        //     Button button = sender as Button;
-        //     if (button != null)
-        //     {
-        //         button.BackColor = Color.Red;
-        //         textBox1.Text = button.Text;
-        //     }
-        // }
-        private void Button_Click(object sender, EventArgs e)
-        {
-            Button button = sender as Button;
-            if (button != null)
-            {
-                button.BackColor = Color.Red;
-                button.Enabled = false;
-                textBox1.Text = button.Text;
-
-                // Send the selected number to the client
-                string message = textBox1.Text;
-                byte[] data = Encoding.ASCII.GetBytes(message);
-                stream.Write(data, 0, data.Length);
-                // if (CheckForWin())
-                // {
-                //     MessageBox.Show("Congratulations! You won!", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                //     // Reset the game or perform any other actions as needed
-                // }
-
-                
-                prevCount = newCount;
-                newCount = CheckForWin();
-                
-                if(newCount>prevCount){
-                   bingoLabel.Text = newCount switch
-                    {
-                        1 => "B",
-                        2 => "BI",
-                        3 => "BIN",
-                        4 => "BING",
-                        5 => "BINGO",
-                        _ => bingoLabel.Text // Keep the current text for other cases
-                    };
-                    // MessageBox.Show("new line", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-                if (newCount>=5 && message!="You lost")
-                {
-                    MessageBox.Show("Congratulations! You won(Server1)!", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    byte[] dataa = Encoding.ASCII.GetBytes("You lost");
-                    stream.Write(dataa, 0, dataa.Length);
-                   
-                    // Reset the game or perform any other actions as needed
-                }
-                SwitchTurns();
-
-            }
-        }
-
-        // private async void SendButton_Click(object sender, EventArgs e)
-        // {
-        //     string message = textBox1.Text;
-        //     byte[] data = Encoding.ASCII.GetBytes(message);
-        //     await stream.WriteAsync(data, 0, data.Length);
-        // }
 
         private async Task ListenForMessages()
         {
             byte[] buffer = new byte[256];
-            while (true)
+            while (!gameEnded)
             {
-                int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
-                string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-                if(message == "You lost"){
-                    MessageBox.Show("Oops :( You lost! ", "You lost", MessageBoxButtons.OK, MessageBoxIcon.Stop);
-                    break;
-                }
-                MarkNumberOnGrid(message);
-
-                prevCount = newCount;
-                newCount = CheckForWin();
-                
-                if(newCount>prevCount){
-                   bingoLabel.Text = newCount switch
-                    {
-                        1 => "B",
-                        2 => "BI",
-                        3 => "BIN",
-                        4 => "BING",
-                        5 => "BINGO",
-                        _ => bingoLabel.Text // Keep the current text for other cases
-                    };
-                    // MessageBox.Show("new line", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-                if (newCount>=5)
+                for (int i = 0; i < clients.Count; i++)
                 {
-                    MessageBox.Show("Congratulations! You(Server2) won!", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    byte[] data = Encoding.ASCII.GetBytes("You lost");
-                    stream.Write(data, 0, data.Length);
-                    break;
-                    // Reset the game or perform any other actions as needed
+                    int bytesRead = await streams[i].ReadAsync(buffer, 0, buffer.Length);
+                    string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+
+                    // Ignore messages from clients that are not their turn
+                    if (i + 1 != currentTurn)
+                    {
+                        continue;
+                    }
+
+                    MarkNumberOnGrid(message);
+                    BroadcastMessage(message);
+
+                    prevCount = newCount;
+                    newCount = CheckForWin();
+
+                    if (newCount > prevCount)
+                    {
+                        bingoLabel.Text = newCount switch
+                        {
+                            1 => "B",
+                            2 => "BI",
+                            3 => "BIN",
+                            4 => "BING",
+                            5 => "BINGO",
+                            _ => bingoLabel.Text
+                        };
+                    }
+                    if (newCount >= 5)
+                    {
+                        gameEnded = true;
+                        MessageBox.Show("Congratulations! You won!", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        BroadcastMessage("You lost");
+                        break;
+                    }
+                    SwitchTurns();
                 }
-                SwitchTurns();
+            }
+        }
+
+        private void BroadcastMessage(string message)
+        {
+            byte[] data = Encoding.ASCII.GetBytes(message);
+            foreach (var stream in streams)
+            {
+                stream.Write(data, 0, data.Length);
+            }
+        }
+
+        private void SwitchTurns()
+        {
+            currentTurn = (currentTurn + 1) % 3; // Rotate turns among server (0), client1 (1), and client2 (2)
+            foreach (Button button in buttons)
+            {
+                button.Enabled = (currentTurn == 0) && (button.BackColor != Color.Red);
+            }
+            BroadcastTurn(); // Notify clients whose turn it is
+        }
+
+        private void BroadcastTurn()
+        {
+            string turnMessage = "TURN:" + currentTurn;
+            byte[] data = Encoding.ASCII.GetBytes(turnMessage);
+            foreach (var stream in streams)
+            {
+                stream.Write(data, 0, data.Length);
             }
         }
 
@@ -174,18 +156,48 @@ namespace BingoServer
             }));
         }
 
-        private void SwitchTurns()
+        private void Button_Click(object sender, EventArgs e)
         {
-            isServerTurn = !isServerTurn;
-            // Disable or enable buttons based on whose turn it is
-            foreach (Button button in buttons)
+            if (gameEnded || currentTurn != 0) return;
+
+            Button button = sender as Button;
+            if (button != null)
             {
-                if(button.BackColor != Color.Red){
-                    button.Enabled = isServerTurn;
+                button.BackColor = Color.Red;
+                button.Enabled = false;
+
+                string message = button.Text;
+                byte[] data = Encoding.ASCII.GetBytes(message);
+                BroadcastMessage(message);
+
+                prevCount = newCount;
+                newCount = CheckForWin();
+
+                if (newCount > prevCount)
+                {
+                    bingoLabel.Text = newCount switch
+                    {
+                        1 => "B",
+                        2 => "BI",
+                        3 => "BIN",
+                        4 => "BING",
+                        5 => "BINGO",
+                        _ => bingoLabel.Text
+                    };
                 }
+                if (newCount >= 5)
+                {
+                    MessageBox.Show("Congratulations! You won!", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    BroadcastMessage("You lost");
+                    gameEnded = true;
+                    foreach (var btn in buttons)
+                    {
+                        btn.Enabled = false;
+                    }
+                }
+                SwitchTurns();
             }
         }
-
 
         private int CheckForWin()
         {
@@ -231,7 +243,7 @@ namespace BingoServer
                 }
                 if (columnComplete)
                 {
-                   count++;
+                    count++;
                 }
             }
             return count;
@@ -254,29 +266,5 @@ namespace BingoServer
             }
             return diagonal1Complete + diagonal2Complete;
         }
-
-        static int[] GenerateRandomOrder(int n)
-        {
-            Random rand = new Random();
-            int[] numbers = new int[n];
-
-            // Fill the array with numbers from 1 to n
-            for (int i = 0; i < n; i++)
-            {
-                numbers[i] = i + 1;
-            }
-
-            // Shuffle the array using Fisher-Yates algorithm
-            for (int i = n - 1; i > 0; i--)
-            {
-                int j = rand.Next(0, i + 1);
-                int temp = numbers[i];
-                numbers[i] = numbers[j];
-                numbers[j] = temp;
-            }
-
-            return numbers;
-        }
-
     }
 }
