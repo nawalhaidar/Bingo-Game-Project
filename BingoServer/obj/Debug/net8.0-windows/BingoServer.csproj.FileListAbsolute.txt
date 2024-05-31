@@ -1,0 +1,14 @@
+C:\Users\user\Desktop\bingo2\BingoServer\bin\Debug\net8.0-windows\BingoServer.exe
+C:\Users\user\Desktop\bingo2\BingoServer\bin\Debug\net8.0-windows\BingoServer.deps.json
+C:\Users\user\Desktop\bingo2\BingoServer\bin\Debug\net8.0-windows\BingoServer.runtimeconfig.json
+C:\Users\user\Desktop\bingo2\BingoServer\bin\Debug\net8.0-windows\BingoServer.dll
+C:\Users\user\Desktop\bingo2\BingoServer\bin\Debug\net8.0-windows\BingoServer.pdb
+C:\Users\user\Desktop\bingo2\BingoServer\obj\Debug\net8.0-windows\BingoServer.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\user\Desktop\bingo2\BingoServer\obj\Debug\net8.0-windows\BingoServer.AssemblyInfoInputs.cache
+C:\Users\user\Desktop\bingo2\BingoServer\obj\Debug\net8.0-windows\BingoServer.AssemblyInfo.cs
+C:\Users\user\Desktop\bingo2\BingoServer\obj\Debug\net8.0-windows\BingoServer.csproj.CoreCompileInputs.cache
+C:\Users\user\Desktop\bingo2\BingoServer\obj\Debug\net8.0-windows\BingoServer.dll
+C:\Users\user\Desktop\bingo2\BingoServer\obj\Debug\net8.0-windows\refint\BingoServer.dll
+C:\Users\user\Desktop\bingo2\BingoServer\obj\Debug\net8.0-windows\BingoServer.pdb
+C:\Users\user\Desktop\bingo2\BingoServer\obj\Debug\net8.0-windows\BingoServer.genruntimeconfig.cache
+C:\Users\user\Desktop\bingo2\BingoServer\obj\Debug\net8.0-windows\ref\BingoServer.dll
