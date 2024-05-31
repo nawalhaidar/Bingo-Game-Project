@@ -42,7 +42,7 @@ namespace BingoServer
                 for (int j = 0; j < 5; j++)
                 {
                     buttons[i, j].Text = numbers[i * 5 + j].ToString();
-                    buttons[i, j].Enabled = true;
+                    buttons[i, j].Enabled = false;
                     buttons[i, j].Font = new Font(this.buttons[i, j].Font, FontStyle.Bold);
                 }
             }
@@ -82,13 +82,13 @@ namespace BingoServer
                 // Send the player number to the client
                 string playerNumberMessage = "PLAYER:" + (i + 1);
                 // MessageBox.Show("Sending "+playerNumberMessage, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                 Thread.Sleep(200);
+                Thread.Sleep(200);
                 sendMessageToStream(i, playerNumberMessage);
                 string numberOfPlayersMessage = "NUMBER OF PLAYERS:" + numberOfPlayers;
                 // MessageBox.Show("Sending "+numberOfPlayersMessage, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 sendMessageToStream(i, numberOfPlayersMessage);
             }
-
+            EnableButtons(true);
             await Task.Run(() => ListenForMessages());
         }
 
@@ -156,6 +156,17 @@ namespace BingoServer
             foreach (var stream in streams)
             {
                 stream.Write(data, 0, data.Length);
+            }
+        }
+
+        private void EnableButtons(bool enable)
+        {
+            foreach (Button button in buttons)
+            {
+                if (button.BackColor != Color.Red)
+                {
+                    button.Enabled = enable;
+                }
             }
         }
 
