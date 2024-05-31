@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.VisualBasic;
 
 namespace BingoServer
 {
@@ -15,10 +16,12 @@ namespace BingoServer
         private List<TcpClient> clients = new List<TcpClient>();
         private List<NetworkStream> streams = new List<NetworkStream>();
         // private Button[,] buttons = new Button[5, 5];
-        private int[] numbers = { 23, 5, 17, 1, 11, 19, 4, 21, 14, 2, 24, 8, 13, 7, 20, 3, 10, 18, 6, 22, 15, 9, 25, 12, 16 };
+        private int[] numbers = GenerateRandomOrder(25);
         private bool gameEnded = false;
         private int prevCount = 0, newCount = 0;
         private int currentTurn = 0; // 0: server, 1: client1, 2: client2
+
+        private int numberOfPlayers = 1;
 
         public Form1()
         {
@@ -28,6 +31,7 @@ namespace BingoServer
         private void Form1_Load(object sender, EventArgs e)
         {
             InitializeGrid();
+            GetNumberOfPlayers();
             StartServer();
         }
         
@@ -44,13 +48,32 @@ namespace BingoServer
             }
         }
 
+        private void GetNumberOfPlayers(){
+            string userInput = Interaction.InputBox("Enter the number of players:", "Input Dialog", "");
+            if (!string.IsNullOrEmpty(userInput))
+            {
+                try{
+                    numberOfPlayers = int.Parse(userInput);
+                }
+                catch(Exception e){
+                    MessageBox.Show("Invalid input. Please enter a valid number.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    GetNumberOfPlayers();
+                    return;
+                }
+                
+            }
+            else
+            {
+                GetNumberOfPlayers();
+            }
+        }
 
         private async void StartServer()
         {
             server = new TcpListener(IPAddress.Any, 5000);
             server.Start();
 
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < numberOfPlayers-1; i++)
             {
                 var client = await server.AcceptTcpClientAsync();
                 clients.Add(client);
@@ -58,24 +81,39 @@ namespace BingoServer
 
                 // Send the player number to the client
                 string playerNumberMessage = "PLAYER:" + (i + 1);
-                byte[] data = Encoding.ASCII.GetBytes(playerNumberMessage);
-                streams[i].Write(data, 0, data.Length);
+                // MessageBox.Show("Sending "+playerNumberMessage, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                 Thread.Sleep(200);
+                sendMessageToStream(i, playerNumberMessage);
+                string numberOfPlayersMessage = "NUMBER OF PLAYERS:" + numberOfPlayers;
+                // MessageBox.Show("Sending "+numberOfPlayersMessage, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                sendMessageToStream(i, numberOfPlayersMessage);
             }
 
             await Task.Run(() => ListenForMessages());
         }
 
+        private void sendMessageToStream(int i,string message){
+            byte[] data = Encoding.ASCII.GetBytes(message);
+            streams[i].Write(data, 0, data.Length);
+        }
+
         private async Task ListenForMessages()
         {
             byte[] buffer = new byte[256];
+            // int bytesRead1 = await streams[0].ReadAsync(buffer, 0, buffer.Length);
+            // string message1 = Encoding.ASCII.GetString(buffer, 0, bytesRead1);
+            // MessageBox.Show(message1,"messaeg", MessageBoxButtons.OK, MessageBoxIcon.Information);
             while (!gameEnded)
             {
                 for (int i = 0; i < clients.Count; i++)
                 {
+                    // MessageBox.Show(i.ToString(),"i", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     int bytesRead = await streams[i].ReadAsync(buffer, 0, buffer.Length);
                     string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
 
-                    // Ignore messages from clients that are not their turn
+                    // MessageBox.Show(message,"messaeg", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    // // Ignore messages from clients that are not their turn
                     if (i + 1 != currentTurn)
                     {
                         continue;
@@ -106,6 +144,7 @@ namespace BingoServer
                         BroadcastMessage("You lost");
                         break;
                     }
+                    // MessageBox.Show("switching turns","turns", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     SwitchTurns();
                 }
             }
@@ -122,7 +161,8 @@ namespace BingoServer
 
         private void SwitchTurns()
         {
-            currentTurn = (currentTurn + 1) % 3; // Rotate turns among server (0), client1 (1), and client2 (2)
+            currentTurn = (currentTurn + 1) % numberOfPlayers; // Rotate turns among server (0), client1 (1), and client2 (2)
+            // MessageBox.Show("currentTurn: "+currentTurn, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             foreach (Button button in buttons)
             {
                 button.Enabled = (currentTurn == 0) && (button.BackColor != Color.Red);
@@ -133,6 +173,7 @@ namespace BingoServer
         private void BroadcastTurn()
         {
             string turnMessage = "TURN:" + currentTurn;
+            // MessageBox.Show("Sending "+turnMessage, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             byte[] data = Encoding.ASCII.GetBytes(turnMessage);
             foreach (var stream in streams)
             {
@@ -168,7 +209,7 @@ namespace BingoServer
 
                 string message = button.Text;
                 byte[] data = Encoding.ASCII.GetBytes(message);
-                BroadcastMessage(message);
+                
 
                 prevCount = newCount;
                 newCount = CheckForWin();
@@ -195,6 +236,7 @@ namespace BingoServer
                         btn.Enabled = false;
                     }
                 }
+                BroadcastMessage(message);
                 SwitchTurns();
             }
         }
@@ -265,6 +307,30 @@ namespace BingoServer
                 }
             }
             return diagonal1Complete + diagonal2Complete;
+        }
+
+
+        static int[] GenerateRandomOrder(int n)
+        {
+            Random rand = new Random();
+            int[] numbers = new int[n];
+
+            // Fill the array with numbers from 1 to n
+            for (int i = 0; i < n; i++)
+            {
+                numbers[i] = i + 1;
+            }
+
+            // Shuffle the array using Fisher-Yates algorithm
+            for (int i = n - 1; i > 0; i--)
+            {
+                int j = rand.Next(0, i + 1);
+                int temp = numbers[i];
+                numbers[i] = numbers[j];
+                numbers[j] = temp;
+            }
+
+            return numbers;
         }
     }
 }

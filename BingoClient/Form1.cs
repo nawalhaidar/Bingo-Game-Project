@@ -12,12 +12,12 @@ namespace BingoClient
         private TcpClient client;
         private NetworkStream stream;
         // private Button[,] buttons = new Button[5, 5];
-        private int[] numbers = { 23, 5, 17, 1, 11, 19, 4, 21, 14, 2, 24, 8, 13, 7, 20, 3, 10, 18, 6, 22, 15, 9, 25, 12, 16 };
+        private int[] numbers = GenerateRandomOrder(25);
         private bool isClientTurn = false;
         private bool gameEnded = false;
         private int prevCount = 0, newCount = 0;
         private int playerNumber; // This client’s player number
-
+        private int numberOfPlayers;
         public Form1()
         {
             InitializeComponent();
@@ -74,6 +74,10 @@ namespace BingoClient
                     int turn = int.Parse(message.Split(':')[1]);
                     isClientTurn = (turn == playerNumber);
                     EnableButtons(isClientTurn);
+                }
+                else if(message.StartsWith("NUMBER OF PLAYERS:"))
+                {   
+                    numberOfPlayers = int.Parse(message.Split(':')[1]);  
                 }
                 else
                 {
@@ -161,7 +165,7 @@ namespace BingoClient
                         btn.Enabled = false;
                     }
                 }
-                SwitchTurns();
+                // SwitchTurns();
             }
         }
 
@@ -244,10 +248,28 @@ namespace BingoClient
             return diagonal1Complete + diagonal2Complete;
         }
 
-        private void SwitchTurns()
+        static int[] GenerateRandomOrder(int n)
         {
-            byte[] data = Encoding.ASCII.GetBytes("TURN:" + ((playerNumber % 2) + 1));
-            stream.Write(data, 0, data.Length);
+            Random rand = new Random();
+            int[] numbers = new int[n];
+
+            // Fill the array with numbers from 1 to n
+            for (int i = 0; i < n; i++)
+            {
+                numbers[i] = i + 1;
+            }
+
+            // Shuffle the array using Fisher-Yates algorithm
+            for (int i = n - 1; i > 0; i--)
+            {
+                int j = rand.Next(0, i + 1);
+                int temp = numbers[i];
+                numbers[i] = numbers[j];
+                numbers[j] = temp;
+            }
+
+            return numbers;
         }
     }
 }
+
