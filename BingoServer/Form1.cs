@@ -35,24 +35,29 @@ namespace BingoServer
 
         private void GetNumberOfPlayers()
         {
-            string userInput = Interaction.InputBox("Enter the number of players:", "Input Dialog", "");
-            if (!string.IsNullOrEmpty(userInput))
+            while (true)
             {
-                try
+                string userInput = Interaction.InputBox("Enter the number of players:", "Input Dialog", "");
+                if (!string.IsNullOrEmpty(userInput))
                 {
-                    numberOfPlayers = int.Parse(userInput);
+                    try
+                    {
+                        numberOfPlayers = int.Parse(userInput);
+                        break; // Exit the loop if input is valid
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("Invalid input. Please enter a valid number.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                 }
-                catch (Exception)
+                else
                 {
-                    MessageBox.Show("Invalid input. Please enter a valid number.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    GetNumberOfPlayers();
+                    // Handle case where user cancels input box
+                    break;
                 }
-            }
-            else
-            {
-                GetNumberOfPlayers();
             }
         }
+
 
         private async void StartServer()
         {
@@ -126,8 +131,15 @@ namespace BingoServer
             }
             else if (message.StartsWith("RESULT:"))
             {
-
                 this.scoreLabels[index].Text = message.Split(':')[1];
+            }
+            else if(message.StartsWith("WON")){
+                int winner = int.Parse(message.Split(':')[1]);
+                for(int i=0; i<numberOfPlayers; i++){
+                    if (i+1!=winner){
+                        sendMessageToStream(i, "LOST");
+                    }
+                }
             }
             else
             {

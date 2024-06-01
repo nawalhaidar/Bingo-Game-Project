@@ -77,7 +77,7 @@ namespace BingoClient
             {
                 EnableButtons(true);
             }
-            else if (message == "You lost")
+            else if (message == "LOST")
             {
                 MessageBox.Show("Oops :( You lost!", "You lost", MessageBoxButtons.OK, MessageBoxIcon.Stop);
                 gameEnded = true;
@@ -104,7 +104,7 @@ namespace BingoClient
                 if (bingoLabel.Text == "BINGO")
                 {
                     MessageBox.Show("Congratulations! You won!", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    byte[] data = Encoding.ASCII.GetBytes("You lost");
+                    byte[] data = Encoding.ASCII.GetBytes("WON:"+playerNumber);
                     stream.Write(data, 0, data.Length);
                     gameEnded = true;
                 }
@@ -158,7 +158,7 @@ namespace BingoClient
                 if (bingoLabel.Text == "BINGO")
                 {
                     MessageBox.Show("Congratulations! You won!", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    byte[] dataa = Encoding.ASCII.GetBytes("You lost");
+                    byte[] dataa = Encoding.ASCII.GetBytes("WON:" + playerNumber);
                     stream.Write(dataa, 0, dataa.Length);
                     gameEnded = true;
                     foreach (var btn in buttons)
