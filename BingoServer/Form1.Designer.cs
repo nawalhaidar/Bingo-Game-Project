@@ -3,14 +3,8 @@
     partial class Form1
     {
         private System.ComponentModel.IContainer components = null;
-        private System.Windows.Forms.Button[,] buttons;
-        private System.Windows.Forms.Label chatLabel;
-        private System.Windows.Forms.TextBox chatTextBox;
-        private System.Windows.Forms.Button sendButton;
-
-        private System.Windows.Forms.Label bingoLabel;
-        private List<Label> nameLabels = new List<Label>();
-        private List<Label> scoreLabels = new List<Label>();
+        private System.Windows.Forms.Label[] nameLabels;
+        private System.Windows.Forms.Label[] scoreLabels;
 
         protected override void Dispose(bool disposing)
         {
@@ -23,6 +17,8 @@
 
         private void InitializeComponent(int numberOfPlayers)
         {
+            this.nameLabels = new System.Windows.Forms.Label[numberOfPlayers];
+            this.scoreLabels = new System.Windows.Forms.Label[numberOfPlayers];
             this.ClientSize = new System.Drawing.Size(800, 450);
             this.Name = "MainForm";
             this.Text = "Dynamic Labels Form";
@@ -31,25 +27,23 @@
             int labelWidth = 100;
             int labelHeight = 20;
             int spacing = 30;
-
+            MessageBox.Show("here","here",MessageBoxButtons.OK,MessageBoxIcon.None);
             for (int i = 0; i < numberOfPlayers; i++)
             {
-                // Create Name Label
-                Label nameLabel = new Label();
-                nameLabel.Text = "Player " + (i + 1);
-                nameLabel.Location = new System.Drawing.Point(10, 10 + i * spacing);
-                nameLabel.Size = new System.Drawing.Size(labelWidth, labelHeight);
-                this.Controls.Add(nameLabel);
-                nameLabels.Add(nameLabel); 
+                nameLabels[i] = new System.Windows.Forms.Label();
+                nameLabels[i].Text = "Player " + (i + 1);
+                nameLabels[i].Location = new System.Drawing.Point(10, 10 + i * spacing);
+                nameLabels[i].Size = new System.Drawing.Size(labelWidth, labelHeight);
+                this.Controls.Add(nameLabels[i]);
+       
+                scoreLabels[i] = new System.Windows.Forms.Label();
+                scoreLabels[i].Text = "Result: ";
+                scoreLabels[i].Location = new System.Drawing.Point(120, 10 + i * spacing);
+                scoreLabels[i].Size = new System.Drawing.Size(labelWidth, labelHeight);
+                this.Controls.Add(scoreLabels[i]);
 
-                // Create Score Label
-                Label scoreLabel = new Label();
-                scoreLabel.Text = "Result: ";
-                scoreLabel.Location = new System.Drawing.Point(120, 10 + i * spacing);
-                scoreLabel.Size = new System.Drawing.Size(labelWidth, labelHeight);
-                this.Controls.Add(scoreLabel);
-                scoreLabels.Add(scoreLabel); 
             }
+            this.Load += new System.EventHandler(this.Form1_Load);
         }
     }
 }

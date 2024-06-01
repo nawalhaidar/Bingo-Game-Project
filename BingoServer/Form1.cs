@@ -26,8 +26,12 @@ namespace BingoServer
         {
             GetNumberOfPlayers();
             InitializeComponent(numberOfPlayers);
+        }
+        private async void Form1_Load(object sender, EventArgs e)
+        {
             StartServer();
         }
+
 
         private void GetNumberOfPlayers()
         {
@@ -73,8 +77,8 @@ namespace BingoServer
 
         private void HandleClient(object indexObj)
         {
-            // try
-            // {
+            try
+            {
                 int index = (int)indexObj;
                 var client = server.AcceptTcpClient();
                 mutex.WaitOne();
@@ -86,11 +90,11 @@ namespace BingoServer
                 sendMessageToStream(index, message);
 
                 ListenForClientMessages(index);
-            // }
-            // catch (Exception e)
-            // {
-            //     MessageBox.Show(e.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            // }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private async void ListenForClientMessages(int index)
@@ -119,16 +123,15 @@ namespace BingoServer
             if (message.StartsWith("CHAT:"))
             {
                 BroadcastMessage(message);
-                string[] messageParts = message.Split(':');
-                string displayMessage = messageParts[1] + ": " + messageParts[2];
-                chatLabel.Text += "\n" + displayMessage;
             }
             else if (message.StartsWith("RESULT:"))
             {
+
                 this.scoreLabels[index].Text = message.Split(':')[1];
             }
             else
             {
+
                 BroadcastMessage(message);
                 SwitchTurns();
             }
@@ -152,17 +155,13 @@ namespace BingoServer
         private void SwitchTurns()
         {
             currentTurn = (currentTurn + 1) % numberOfPlayers;
-            foreach (Button button in buttons)
-            {
-                button.Enabled = (currentTurn == 0) && (button.BackColor != Color.Red);
-            }
             BroadcastTurn();
         }
 
         private void BroadcastTurn()
         {
             string turnMessage = "TURN:" + (currentTurn+1);
-            MessageBox.Show(turnMessage,"turn",MessageBoxButtons.OKCancel,MessageBoxIcon.None);
+            // MessageBox.Show(turnMessage,"turn",MessageBoxButtons.OKCancel,MessageBoxIcon.None);
             byte[] data = Encoding.ASCII.GetBytes(turnMessage);
             foreach (var stream in streams)
             {
