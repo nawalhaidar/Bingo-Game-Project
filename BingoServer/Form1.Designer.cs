@@ -75,6 +75,7 @@
             this.chatLabel.Location = new System.Drawing.Point(2*gridStartX + 5 * (buttonSize + buttonSpacing), 50);
             this.chatLabel.Text = "chat:";
             this.chatLabel.Size = new System.Drawing.Size(35, 13);
+            this.chatLabel.MaximumSize= new System.Drawing.Size(260, 800);
             this.chatLabel.TabIndex = 1;
             this.chatLabel.Name = "chatLabel";
 

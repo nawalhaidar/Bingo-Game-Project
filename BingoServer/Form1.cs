@@ -117,16 +117,19 @@ namespace BingoServer
         }
 
         private async void ListenForClientMessages(int index){
-            byte[] buffer = new byte[256];
-            MessageBox.Show("listening"+index.ToString(), "index", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            int bytesRead = await streams[index].ReadAsync(buffer, 0, buffer.Length);
-            string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-            if(message.StartsWith("CHAT:")){
-                BroadcastMessage(message);
-                string[] messageParts = message.Split(':');
-                string displayMessage = messageParts[1]+messageParts[2];
-                chatLabel.Text+="\n"+displayMessage;
+            while(!gameEnded){
+                byte[] buffer = new byte[256];
+                // MessageBox.Show("listening"+index.ToString(), "index", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                int bytesRead = await streams[index].ReadAsync(buffer, 0, buffer.Length);
+                string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                if(message.StartsWith("CHAT:")){
+                    BroadcastMessage(message);
+                    string[] messageParts = message.Split(':');
+                    string displayMessage = messageParts[1] + ": " + messageParts[2];
+                    chatLabel.Text+="\n"+displayMessage;
+                }
             }
+            
         }
 
         private void sendMessageToStream(int i,string message){
@@ -364,7 +367,6 @@ namespace BingoServer
             }
             return diagonal1Complete + diagonal2Complete;
         }
-
 
         static int[] GenerateRandomOrder(int n)
         {

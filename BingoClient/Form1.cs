@@ -85,7 +85,7 @@ namespace BingoClient
                 // }
                 else if(message.StartsWith("CHAT:")){
                     string[] messageParts = message.Split(':');
-                    string displayMessage = messageParts[1]+messageParts[2];
+                    string displayMessage = messageParts[1]+ ": "+messageParts[2];
                     chatLabel.Text+="\n"+displayMessage;
                 }
                 else
@@ -121,7 +121,7 @@ namespace BingoClient
         private void SendButton_Click(object sender, EventArgs e)
         {
             string chatMessage = this.chatTextBox.Text;
-            string message = "CHAT:SERVER: " + chatMessage;
+            string message = "CHAT:PLAYER" +playerNumber+":" + chatMessage;
             byte[] data = Encoding.ASCII.GetBytes(message);
             stream.Write(data, 0, data.Length);
         }
