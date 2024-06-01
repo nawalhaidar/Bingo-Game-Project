@@ -4,8 +4,8 @@
     {
         private System.ComponentModel.IContainer components = null;
         private System.Windows.Forms.Button[,] buttons;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.Label chatLabel;
+        private System.Windows.Forms.TextBox chatTextBox;
         private System.Windows.Forms.Button sendButton;
 
         private System.Windows.Forms.Label bingoLabel;
@@ -23,10 +23,14 @@
         {
             this.components = new System.ComponentModel.Container();
             this.buttons = new System.Windows.Forms.Button[5, 5];
-            this.label1 = new System.Windows.Forms.Label();
-            this.textBox1 = new System.Windows.Forms.TextBox();
+            this.chatTextBox = new System.Windows.Forms.TextBox();
             this.sendButton = new System.Windows.Forms.Button();
             this.bingoLabel = new System.Windows.Forms.Label();
+            this.chatLabel = new System.Windows.Forms.Label();
+            this.chatTextBox = new System.Windows.Forms.TextBox();
+            this.sendButton = new System.Windows.Forms.Button();
+            // this.panel1 = new System.Windows.Forms.Panel();
+            // this.panel1.SuspendLayout();
 
             this.SuspendLayout();
 
@@ -67,9 +71,32 @@
                 }
             }
 
+            this.chatLabel.AutoSize = true;
+            this.chatLabel.Location = new System.Drawing.Point(2*gridStartX + 5 * (buttonSize + buttonSpacing), 50);
+            this.chatLabel.Text = "chat:";
+            this.chatLabel.Size = new System.Drawing.Size(35, 13);
+            this.chatLabel.TabIndex = 1;
+            this.chatLabel.Name = "chatLabel";
+
+            this.chatTextBox.Location = new System.Drawing.Point(2*gridStartX + 5 * (buttonSize + buttonSpacing), 600);
+            this.chatTextBox.Name = "chatTextBox";
+            this.chatTextBox.Size = new System.Drawing.Size(260, 20);
+            this.chatTextBox.TabIndex = 2;
+
+            this.sendButton.Location = new System.Drawing.Point(2*gridStartX + 5 * (buttonSize + buttonSpacing), 700);
+            this.sendButton.Name = "sendButton";
+            this.sendButton.Size = new System.Drawing.Size(100, 70);
+            this.sendButton.TabIndex = 3;
+            this.sendButton.Text = "Send Message";
+            this.sendButton.UseVisualStyleBackColor = true;
+            this.sendButton.Click += new System.EventHandler(this.SendButton_Click);
+
+            this.Controls.Add(this.sendButton);
+            this.Controls.Add(this.chatTextBox);
+            this.Controls.Add(this.chatLabel);
             // Set the size and position of other controls if needed
 
-            this.ClientSize = new System.Drawing.Size(700, 800);
+            this.ClientSize = new System.Drawing.Size(1400, 800);
             this.Controls.Add(this.bingoLabel);
             // Add other controls as needed
 

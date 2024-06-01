@@ -13,6 +13,7 @@ namespace BingoServer
     public partial class Form1 : Form
     {
         private TcpListener server;
+        private List<Thread> clientThreads = new List<Thread>();
         private List<TcpClient> clients = new List<TcpClient>();
         private List<NetworkStream> streams = new List<NetworkStream>();
         // private Button[,] buttons = new Button[5, 5];
@@ -20,8 +21,9 @@ namespace BingoServer
         private bool gameEnded = false;
         private int prevCount = 0, newCount = 0;
         private int currentTurn = 0; // 0: server, 1: client1, 2: client2
+         private static Mutex mutex = new Mutex();
 
-        private int numberOfPlayers = 1;
+        private int numberOfPlayers;
 
         public Form1()
         {
@@ -75,21 +77,56 @@ namespace BingoServer
 
             for (int i = 0; i < numberOfPlayers-1; i++)
             {
-                var client = await server.AcceptTcpClientAsync();
-                clients.Add(client);
-                streams.Add(client.GetStream());
-
-                // Send the player number to the client
-                string playerNumberMessage = "PLAYER:" + (i + 1);
-                // MessageBox.Show("Sending "+playerNumberMessage, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                Thread.Sleep(200);
-                sendMessageToStream(i, playerNumberMessage);
-                string numberOfPlayersMessage = "NUMBER OF PLAYERS:" + numberOfPlayers;
-                // MessageBox.Show("Sending "+numberOfPlayersMessage, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                sendMessageToStream(i, numberOfPlayersMessage);
+                var clientThread = new Thread(new ParameterizedThreadStart(HandleClient));
+                clientThread.Start(i);
+                clientThreads.Add(clientThread);
             }
+            await Task.Run(() => WaitForPlayers());
             EnableButtons(true);
             await Task.Run(() => ListenForMessages());
+        }
+        private void WaitForPlayers(){
+            while(clients.Count()<numberOfPlayers-1);
+        }
+        private void HandleClient(object indexObj)
+        {
+            try{
+                int index = (int)indexObj;
+                // Thread.Sleep(200);
+                var client = server.AcceptTcpClient();
+                mutex.WaitOne();
+                clients.Add(client);
+                streams.Add(client.GetStream());
+                mutex.ReleaseMutex();
+
+                string playerNumberMessage = "PLAYER:" + (index + 1);
+                // Thread.Sleep(200);
+                // sendMessageToStream(index, playerNumberMessage);
+
+                string numberOfPlayersMessage = "NUMBER OF PLAYERS:" + numberOfPlayers;
+                // sendMessageToStream(index, numberOfPlayersMessage);
+                string message = playerNumberMessage + "," + numberOfPlayersMessage;
+                sendMessageToStream(index, message);
+
+                ListenForClientMessages(index);// Listen for messages from this client
+            }
+            catch(Exception e){
+                MessageBox.Show(e.Message, "error",MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+        }
+
+        private async void ListenForClientMessages(int index){
+            byte[] buffer = new byte[256];
+            MessageBox.Show("listening"+index.ToString(), "index", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            int bytesRead = await streams[index].ReadAsync(buffer, 0, buffer.Length);
+            string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+            if(message.StartsWith("CHAT:")){
+                BroadcastMessage(message);
+                string[] messageParts = message.Split(':');
+                string displayMessage = messageParts[1]+messageParts[2];
+                chatLabel.Text+="\n"+displayMessage;
+            }
         }
 
         private void sendMessageToStream(int i,string message){
@@ -250,6 +287,14 @@ namespace BingoServer
                 BroadcastMessage(message);
                 SwitchTurns();
             }
+        }
+
+        private void SendButton_Click(object sender, EventArgs e)
+        {
+            string chatMessage = this.chatTextBox.Text;
+            string message = "CHAT:SERVER: " + chatMessage;
+            chatLabel.Text +="\n"+ "SERVER: " + chatMessage;
+            BroadcastMessage(message);
         }
 
         private int CheckForWin()

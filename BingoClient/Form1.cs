@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Xml.Serialization;
 
 namespace BingoClient
 {
@@ -61,7 +62,10 @@ namespace BingoClient
 
                 if (message.StartsWith("PLAYER:"))
                 {
-                    playerNumber = int.Parse(message.Split(':')[1]);
+                    string playerMessage = message.Split(',')[0];
+                    string numberOfPlayersMessage = message.Split(',')[1];
+                    playerNumber = int.Parse(playerMessage.Split(':')[1]);
+                    numberOfPlayers = int.Parse(numberOfPlayersMessage.Split(':')[1]);
                 }
                 else if (message == "You lost")
                 {
@@ -75,9 +79,14 @@ namespace BingoClient
                     isClientTurn = (turn == playerNumber);
                     EnableButtons(isClientTurn);
                 }
-                else if(message.StartsWith("NUMBER OF PLAYERS:"))
-                {   
-                    numberOfPlayers = int.Parse(message.Split(':')[1]);  
+                // else if(message.StartsWith("NUMBER OF PLAYERS:"))
+                // {   
+                //     numberOfPlayers = int.Parse(message.Split(':')[1]);  
+                // }
+                else if(message.StartsWith("CHAT:")){
+                    string[] messageParts = message.Split(':');
+                    string displayMessage = messageParts[1]+messageParts[2];
+                    chatLabel.Text+="\n"+displayMessage;
                 }
                 else
                 {
@@ -107,6 +116,14 @@ namespace BingoClient
                     }
                 }
             }
+        }
+
+        private void SendButton_Click(object sender, EventArgs e)
+        {
+            string chatMessage = this.chatTextBox.Text;
+            string message = "CHAT:SERVER: " + chatMessage;
+            byte[] data = Encoding.ASCII.GetBytes(message);
+            stream.Write(data, 0, data.Length);
         }
 
         private void MarkNumberOnGrid(string number)
