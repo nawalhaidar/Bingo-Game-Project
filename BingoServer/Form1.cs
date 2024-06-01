@@ -83,7 +83,7 @@ namespace BingoServer
             }
             await Task.Run(() => WaitForPlayers());
             EnableButtons(true);
-            await Task.Run(() => ListenForMessages());
+            // await Task.Run(() => ListenForMessages());
         }
         private void WaitForPlayers(){
             while(clients.Count()<numberOfPlayers-1);
@@ -128,33 +128,8 @@ namespace BingoServer
                     string displayMessage = messageParts[1] + ": " + messageParts[2];
                     chatLabel.Text+="\n"+displayMessage;
                 }
-            }
-            
-        }
-
-        private void sendMessageToStream(int i,string message){
-            byte[] data = Encoding.ASCII.GetBytes(message);
-            streams[i].Write(data, 0, data.Length);
-        }
-
-        private async Task ListenForMessages()
-        {
-            byte[] buffer = new byte[256];
-            // int bytesRead1 = await streams[0].ReadAsync(buffer, 0, buffer.Length);
-            // string message1 = Encoding.ASCII.GetString(buffer, 0, bytesRead1);
-            // MessageBox.Show(message1,"messaeg", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            while (!gameEnded)
-            {
-                for (int i = 0; i < clients.Count; i++)
-                {
-                    // MessageBox.Show(i.ToString(),"i", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    int bytesRead = await streams[i].ReadAsync(buffer, 0, buffer.Length);
-                    string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-
-                    // MessageBox.Show(message,"messaeg", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                    // // Ignore messages from clients that are not their turn
-                    if (i + 1 != currentTurn)
+                else{ // a move
+                    if (index + 1 != currentTurn)
                     {
                         continue;
                     }
@@ -187,8 +162,68 @@ namespace BingoServer
                     // MessageBox.Show("switching turns","turns", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     SwitchTurns();
                 }
+
             }
+            
         }
+
+        private void sendMessageToStream(int i,string message){
+            byte[] data = Encoding.ASCII.GetBytes(message);
+            streams[i].Write(data, 0, data.Length);
+        }
+
+        // private async Task ListenForMessages()
+        // {
+        //     byte[] buffer = new byte[256];
+        //     // int bytesRead1 = await streams[0].ReadAsync(buffer, 0, buffer.Length);
+        //     // string message1 = Encoding.ASCII.GetString(buffer, 0, bytesRead1);
+        //     // MessageBox.Show(message1,"messaeg", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        //     while (!gameEnded)
+        //     {
+        //         for (int i = 0; i < clients.Count; i++)
+        //         {
+        //             // MessageBox.Show(i.ToString(),"i", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        //             int bytesRead = await streams[i].ReadAsync(buffer, 0, buffer.Length);
+        //             string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+
+        //             // MessageBox.Show(message,"messaeg", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+        //             // // Ignore messages from clients that are not their turn
+        //             if (i + 1 != currentTurn)
+        //             {
+        //                 continue;
+        //             }
+
+        //             MarkNumberOnGrid(message);
+        //             BroadcastMessage(message);
+
+        //             prevCount = newCount;
+        //             newCount = CheckForWin();
+
+        //             if (newCount > prevCount)
+        //             {
+        //                 bingoLabel.Text = newCount switch
+        //                 {
+        //                     1 => "B",
+        //                     2 => "BI",
+        //                     3 => "BIN",
+        //                     4 => "BING",
+        //                     5 => "BINGO",
+        //                     _ => bingoLabel.Text
+        //                 };
+        //             }
+        //             if (newCount >= 5)
+        //             {
+        //                 gameEnded = true;
+        //                 MessageBox.Show("Congratulations! You won!", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        //                 BroadcastMessage("You lost");
+        //                 break;
+        //             }
+        //             // MessageBox.Show("switching turns","turns", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        //             SwitchTurns();
+        //         }
+        //     }
+        // }
 
         private void BroadcastMessage(string message)
         {
