@@ -71,7 +71,7 @@ namespace BingoClient
             if (message.StartsWith("PLAYER:"))
             {
                 playerNumber = int.Parse(message.Split(':')[1]);
-                
+                this.Text = "Player " + playerNumber;
             }
             else if (message == "START" && playerNumber == 1)
             {

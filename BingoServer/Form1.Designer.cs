@@ -21,13 +21,13 @@
             this.scoreLabels = new System.Windows.Forms.Label[numberOfPlayers];
             this.ClientSize = new System.Drawing.Size(800, 450);
             this.Name = "MainForm";
-            this.Text = "Dynamic Labels Form";
+            this.Text = "Results";
             this.ResumeLayout(false);
 
             int labelWidth = 100;
             int labelHeight = 20;
             int spacing = 30;
-            MessageBox.Show("here","here",MessageBoxButtons.OK,MessageBoxIcon.None);
+
             for (int i = 0; i < numberOfPlayers; i++)
             {
                 nameLabels[i] = new System.Windows.Forms.Label();
@@ -37,7 +37,7 @@
                 this.Controls.Add(nameLabels[i]);
        
                 scoreLabels[i] = new System.Windows.Forms.Label();
-                scoreLabels[i].Text = "Result: ";
+                scoreLabels[i].Text = "";
                 scoreLabels[i].Location = new System.Drawing.Point(120, 10 + i * spacing);
                 scoreLabels[i].Size = new System.Drawing.Size(labelWidth, labelHeight);
                 this.Controls.Add(scoreLabels[i]);
