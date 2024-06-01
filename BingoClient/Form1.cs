@@ -4,7 +4,6 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Xml.Serialization;
 
 namespace BingoClient
 {
@@ -12,13 +11,11 @@ namespace BingoClient
     {
         private TcpClient client;
         private NetworkStream stream;
-        // private Button[,] buttons = new Button[5, 5];
         private int[] numbers = GenerateRandomOrder(25);
         private bool isClientTurn = false;
         private bool gameEnded = false;
-        private int prevCount = 0, newCount = 0;
         private int playerNumber; // This client’s player number
-        private int numberOfPlayers;
+
         public Form1()
         {
             InitializeComponent();
@@ -38,7 +35,7 @@ namespace BingoClient
                 {
                     buttons[i, j].Text = numbers[i * 5 + j].ToString();
                     buttons[i, j].Enabled = false;
-                    buttons[i, j].Font = new Font(this.buttons[i, j].Font, FontStyle.Bold);
+                    buttons[i, j].Font = new Font(buttons[i, j].Font, FontStyle.Bold);
                 }
             }
         }
@@ -46,10 +43,16 @@ namespace BingoClient
         private async Task ConnectToServer()
         {
             client = new TcpClient();
-            await client.ConnectAsync("127.0.0.1", 5000);
-            stream = client.GetStream();
-
-            await Task.Run(() => ListenForMessages());
+            try
+            {
+                await client.ConnectAsync("127.0.0.1", 5001);
+                stream = client.GetStream();
+                await Task.Run(() => ListenForMessages());
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Connection failed: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private async Task ListenForMessages()
@@ -59,71 +62,67 @@ namespace BingoClient
             {
                 int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
                 string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-
-                if (message.StartsWith("PLAYER:"))
-                {
-                    string playerMessage = message.Split(',')[0];
-                    string numberOfPlayersMessage = message.Split(',')[1];
-                    playerNumber = int.Parse(playerMessage.Split(':')[1]);
-                    numberOfPlayers = int.Parse(numberOfPlayersMessage.Split(':')[1]);
-                }
-                else if (message == "You lost")
-                {
-                    MessageBox.Show("Oops :( You lost!", "You lost", MessageBoxButtons.OK, MessageBoxIcon.Stop);
-                    gameEnded = true;
-                    break;
-                }
-                else if (message.StartsWith("TURN:"))
-                {
-                    int turn = int.Parse(message.Split(':')[1]);
-                    isClientTurn = (turn == playerNumber);
-                    EnableButtons(isClientTurn);
-                }
-                // else if(message.StartsWith("NUMBER OF PLAYERS:"))
-                // {   
-                //     numberOfPlayers = int.Parse(message.Split(':')[1]);  
-                // }
-                else if(message.StartsWith("CHAT:")){
-                    string[] messageParts = message.Split(':');
-                    string displayMessage = messageParts[1]+ ": "+messageParts[2];
-                    chatLabel.Text+="\n"+displayMessage;
-                }
-                else
-                {
-                    MarkNumberOnGrid(message);
-                    prevCount = newCount;
-                    newCount = CheckForWin();
-
-                    if (newCount > prevCount)
-                    {
-                        bingoLabel.Text = newCount switch
-                        {
-                            1 => "B",
-                            2 => "BI",
-                            3 => "BIN",
-                            4 => "BING",
-                            5 => "BINGO",
-                            _ => bingoLabel.Text
-                        };
-                    }
-                    if (newCount >= 5)
-                    {
-                        MessageBox.Show("Congratulations! You won!", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        byte[] data = Encoding.ASCII.GetBytes("You lost");
-                        stream.Write(data, 0, data.Length);
-                        gameEnded = true;
-                        break;
-                    }
-                }
+                HandleServerMessage(message);
             }
+        }
+
+        private void HandleServerMessage(string message)
+        {
+            if (message.StartsWith("PLAYER:"))
+            {
+                playerNumber = int.Parse(message.Split(':')[1]);
+                
+            }
+            else if (message == "START" && playerNumber == 1)
+            {
+                EnableButtons(true);
+            }
+            else if (message == "You lost")
+            {
+                MessageBox.Show("Oops :( You lost!", "You lost", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                gameEnded = true;
+            }
+            else if (message.StartsWith("TURN:"))
+            {
+                int turn = int.Parse(message.Split(':')[1]);
+                isClientTurn = (turn == playerNumber);
+                EnableButtons(isClientTurn);
+            }
+            else if (message.StartsWith("CHAT:"))
+            {
+                string[] messageParts = message.Split(':');
+                string displayMessage = messageParts[1] + ": " + messageParts[2];
+                this.Invoke(new Action(() =>
+                {
+                    chatLabel.Text += "\n" + displayMessage;
+                }));
+            }
+            else
+            {
+                MarkNumberOnGrid(message);
+                UpdateBingoLabel();
+                if (bingoLabel.Text == "BINGO")
+                {
+                    MessageBox.Show("Congratulations! You won!", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    byte[] data = Encoding.ASCII.GetBytes("You lost");
+                    stream.Write(data, 0, data.Length);
+                    gameEnded = true;
+                }
+                sendMessageToServer("RESULT:" + bingoLabel.Text);
+            }
+        }
+
+        private void sendMessageToServer(string message)
+        {
+            byte[] data = Encoding.ASCII.GetBytes(message);
+            stream.Write(data, 0, data.Length);
         }
 
         private void SendButton_Click(object sender, EventArgs e)
         {
-            string chatMessage = this.chatTextBox.Text;
-            string message = "CHAT:PLAYER" +playerNumber+":" + chatMessage;
-            byte[] data = Encoding.ASCII.GetBytes(message);
-            stream.Write(data, 0, data.Length);
+            string chatMessage = chatTextBox.Text;
+            string message = "CHAT:PLAYER" + playerNumber + ":" + chatMessage;
+            sendMessageToServer(message);
         }
 
         private void MarkNumberOnGrid(string number)
@@ -144,8 +143,6 @@ namespace BingoClient
 
         private void Button_Click(object sender, EventArgs e)
         {
-            if (gameEnded || !isClientTurn) return;
-
             Button button = sender as Button;
             if (button != null)
             {
@@ -156,22 +153,9 @@ namespace BingoClient
                 byte[] data = Encoding.ASCII.GetBytes(message);
                 stream.Write(data, 0, data.Length);
 
-                prevCount = newCount;
-                newCount = CheckForWin();
+                UpdateBingoLabel();
 
-                if (newCount > prevCount)
-                {
-                    bingoLabel.Text = newCount switch
-                    {
-                        1 => "B",
-                        2 => "BI",
-                        3 => "BIN",
-                        4 => "BING",
-                        5 => "BINGO",
-                        _ => bingoLabel.Text
-                    };
-                }
-                if (newCount >= 5)
+                if (bingoLabel.Text == "BINGO")
                 {
                     MessageBox.Show("Congratulations! You won!", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     byte[] dataa = Encoding.ASCII.GetBytes("You lost");
@@ -182,7 +166,8 @@ namespace BingoClient
                         btn.Enabled = false;
                     }
                 }
-                // SwitchTurns();
+
+                sendMessageToServer("RESULT:" + bingoLabel.Text);
             }
         }
 
@@ -197,10 +182,18 @@ namespace BingoClient
             }
         }
 
-        private int CheckForWin()
+        private void UpdateBingoLabel()
         {
             int totalCount = CheckRowsForWin() + CheckColumnsForWin() + CheckDiagonalsForWin();
-            return totalCount;
+            bingoLabel.Text = totalCount switch
+            {
+                1 => "B",
+                2 => "BI",
+                3 => "BIN",
+                4 => "BING",
+                5 => "BINGO",
+                _ => bingoLabel.Text
+            };
         }
 
         private int CheckRowsForWin()
@@ -269,14 +262,10 @@ namespace BingoClient
         {
             Random rand = new Random();
             int[] numbers = new int[n];
-
-            // Fill the array with numbers from 1 to n
             for (int i = 0; i < n; i++)
             {
                 numbers[i] = i + 1;
             }
-
-            // Shuffle the array using Fisher-Yates algorithm
             for (int i = n - 1; i > 0; i--)
             {
                 int j = rand.Next(0, i + 1);
@@ -284,9 +273,7 @@ namespace BingoClient
                 numbers[i] = numbers[j];
                 numbers[j] = temp;
             }
-
             return numbers;
         }
     }
 }
-
