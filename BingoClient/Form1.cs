@@ -104,7 +104,7 @@ namespace BingoClient
                 UpdateBingoLabel();
                 if (bingoLabel.Text == "BINGO" && !gameEnded)
                 {
-                    MessageBox.Show("Congratulations! You won!", "Winner, 2", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Congratulations! You won!", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     gameEnded = true;
                 }
                 SendMessageToServer("RESULT:" + bingoLabel.Text);
@@ -157,7 +157,7 @@ namespace BingoClient
 
                 if (bingoLabel.Text == "BINGO" && !gameEnded)
                 {
-                    MessageBox.Show("Congratulations! You won!", "Winner, 1", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Congratulations! You won!", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     byte[] dataa = Encoding.ASCII.GetBytes("WON:" + playerNumber);
                     stream.Write(dataa, 0, dataa.Length);
                     gameEnded = true;

@@ -60,6 +60,8 @@ namespace BingoServer
         private async void StartServer()
         {
             serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            // IPAddress ip = new ("192.168.137.67");
+            // serverSocket.Bind(new IPEndPoint(ip, 5001));
             serverSocket.Bind(new IPEndPoint(IPAddress.Any, 5001));
             serverSocket.Listen(10);
 
@@ -91,6 +93,7 @@ namespace BingoServer
                 mutex.ReleaseMutex();
 
                 string message = "PLAYER:" + (clients.Count);
+                // MessageBox.Show("message", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 SendMessageToStream(clients.Count - 1, message);
 
                 ListenForClientMessages(clients.Count - 1);
@@ -130,8 +133,11 @@ namespace BingoServer
             }
             else if (message.StartsWith("RESULT:"))
             {
-                string result = message.Split(':')[1];
-                // Update UI or handle result
+                string result =  message.Split(':')[1];
+                this.scoreLabels[index].Text = result;
+                if (result == "BINGO"){
+                    BroadcastMessageExceptStream(index, "LOST");
+                }
             }
             else
             {
