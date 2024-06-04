@@ -18,7 +18,9 @@ namespace BingoServer
         private List<NetworkStream> streams = new List<NetworkStream>();
         private bool gameEnded = false;
         private int currentTurn = 0;
-        private static Mutex mutex = new Mutex();
+        private readonly object clientAnsStreamListLock = new object(); // Lock object for synchronizing access to clients list
+        private readonly object gameEndedLock = new object();
+        private readonly object currentTurnLock = new object();
         private int numberOfPlayers;
 
         public Form1()
@@ -87,10 +89,10 @@ namespace BingoServer
             try
             {
                 Socket client = serverSocket.Accept();
-                mutex.WaitOne();
-                clients.Add(client);
-                streams.Add(new NetworkStream(client));
-                mutex.ReleaseMutex();
+                lock(clientAnsStreamListLock){
+                    clients.Add(client);
+                    streams.Add(new NetworkStream(client));
+                }
 
                 string message = "PLAYER:" + (clients.Count);
                 // MessageBox.Show("message", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -137,6 +139,10 @@ namespace BingoServer
                 this.scoreLabels[index].Text = result;
                 if (result == "BINGO"){
                     BroadcastMessageExceptStream(index, "LOST");
+                    lock (gameEndedLock)
+                    {
+                        gameEnded = true;
+                    }
                 }
             }
             else
@@ -175,7 +181,9 @@ namespace BingoServer
 
         private void SwitchTurns()
         {
-            currentTurn = (currentTurn + 1) % numberOfPlayers;
+            lock(currentTurnLock){
+                currentTurn = (currentTurn + 1) % numberOfPlayers;
+            }
             BroadcastTurn();
         }
 
