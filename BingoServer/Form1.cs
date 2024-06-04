@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -13,9 +12,9 @@ namespace BingoServer
 {
     public partial class Form1 : Form
     {
-        private TcpListener server;
+        private Socket serverSocket;
         private List<Thread> clientThreads = new List<Thread>();
-        private List<TcpClient> clients = new List<TcpClient>();
+        private List<Socket> clients = new List<Socket>();
         private List<NetworkStream> streams = new List<NetworkStream>();
         private bool gameEnded = false;
         private int currentTurn = 0;
@@ -27,11 +26,11 @@ namespace BingoServer
             GetNumberOfPlayers();
             InitializeComponent(numberOfPlayers);
         }
+
         private async void Form1_Load(object sender, EventArgs e)
         {
             StartServer();
         }
-
 
         private void GetNumberOfPlayers()
         {
@@ -58,43 +57,43 @@ namespace BingoServer
             }
         }
 
-
         private async void StartServer()
         {
-            server = new TcpListener(IPAddress.Any, 5001);
-            server.Start();
+            serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            serverSocket.Bind(new IPEndPoint(IPAddress.Any, 5001));
+            serverSocket.Listen(10);
+
             for (int i = 0; i < numberOfPlayers; i++)
             {
-                var clientThread = new Thread(new ParameterizedThreadStart(HandleClient));
-                clientThread.Start(i);
+                var clientThread = new Thread(HandleClient);
+                clientThread.Start();
                 clientThreads.Add(clientThread);
             }
             await Task.Run(() => WaitForPlayers());
 
             // Notify players that the game is starting
-            sendMessageToStream(0,"START");
+            SendMessageToStream(0, "START");
         }
 
         private void WaitForPlayers()
         {
-            while (clients.Count() < numberOfPlayers) ;
+            while (clients.Count < numberOfPlayers) ;
         }
 
-        private void HandleClient(object indexObj)
+        private void HandleClient()
         {
             try
             {
-                int index = (int)indexObj;
-                var client = server.AcceptTcpClient();
+                Socket client = serverSocket.Accept();
                 mutex.WaitOne();
                 clients.Add(client);
-                streams.Add(client.GetStream());
+                streams.Add(new NetworkStream(client));
                 mutex.ReleaseMutex();
 
-                string message = "PLAYER:" + (index + 1);
-                sendMessageToStream(index, message);
+                string message = "PLAYER:" + (clients.Count);
+                SendMessageToStream(clients.Count - 1, message);
 
-                ListenForClientMessages(index);
+                ListenForClientMessages(clients.Count - 1);
             }
             catch (Exception e)
             {
@@ -131,21 +130,17 @@ namespace BingoServer
             }
             else if (message.StartsWith("RESULT:"))
             {
-                // MessageBox.Show("server recieved: "+ message + " , result is " + message.Split(':')[1], "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                string result =  message.Split(':')[1];
-                this.scoreLabels[index].Text = result;
-                if (result == "BINGO"){
-                    BroadcastMessageExceptStream(index, "LOST");
-                }
+                string result = message.Split(':')[1];
+                // Update UI or handle result
             }
             else
             {
-                BroadcastMessageExceptStream(index,message);
+                BroadcastMessageExceptStream(index, message);
                 SwitchTurns();
             }
         }
 
-        private void sendMessageToStream(int index, string message)
+        private void SendMessageToStream(int index, string message)
         {
             byte[] data = Encoding.ASCII.GetBytes(message);
             streams[index].Write(data, 0, data.Length);
@@ -159,16 +154,18 @@ namespace BingoServer
                 stream.Write(data, 0, data.Length);
             }
         }
+
         private void BroadcastMessageExceptStream(int index, string message)
         {
             byte[] data = Encoding.ASCII.GetBytes(message);
-            for(int i=0; i<streams.Count(); i++){
-                if(i!=index){
+            for (int i = 0; i < streams.Count; i++)
+            {
+                if (i != index)
+                {
                     streams[i].Write(data, 0, data.Length);
                 }
             }
         }
-
 
         private void SwitchTurns()
         {
@@ -178,8 +175,7 @@ namespace BingoServer
 
         private void BroadcastTurn()
         {
-            string turnMessage = "TURN:" + (currentTurn+1);
-            // MessageBox.Show(turnMessage,"turn",MessageBoxButtons.OKCancel,MessageBoxIcon.None);
+            string turnMessage = "TURN:" + (currentTurn + 1);
             byte[] data = Encoding.ASCII.GetBytes(turnMessage);
             foreach (var stream in streams)
             {

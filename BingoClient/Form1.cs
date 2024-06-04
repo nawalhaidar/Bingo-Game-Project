@@ -10,7 +10,7 @@ namespace BingoClient
 {
     public partial class Form1 : Form
     {
-        private TcpClient client;
+        private Socket clientSocket;
         private NetworkStream stream;
         private int[] numbers = GenerateRandomOrder(25);
         private bool isClientTurn = false;
@@ -41,13 +41,13 @@ namespace BingoClient
             }
         }
 
-        private async Task ConnectToServer()
+         private async Task ConnectToServer()
         {
-            client = new TcpClient();
+            clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             try
             {
-                await client.ConnectAsync("127.0.0.1", 5001);
-                stream = client.GetStream();
+                await clientSocket.ConnectAsync("127.0.0.1", 5001);
+                stream = new NetworkStream(clientSocket);
                 await Task.Run(() => ListenForMessages());
             }
             catch (Exception ex)
@@ -107,11 +107,11 @@ namespace BingoClient
                     MessageBox.Show("Congratulations! You won!", "Winner, 2", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     gameEnded = true;
                 }
-                sendMessageToServer("RESULT:" + bingoLabel.Text);
+                SendMessageToServer("RESULT:" + bingoLabel.Text);
             }
         }
 
-        private void sendMessageToServer(string message)
+         private void SendMessageToServer(string message)
         {
             byte[] data = Encoding.ASCII.GetBytes(message);
             stream.Write(data, 0, data.Length);
@@ -121,7 +121,7 @@ namespace BingoClient
         {
             string chatMessage = chatTextBox.Text;
             string message = "CHAT:PLAYER" + playerNumber + ":" + chatMessage;
-            sendMessageToServer(message);
+            SendMessageToServer(message);
             chatTextBox.Text = "";
         }
 
@@ -170,7 +170,7 @@ namespace BingoClient
                 message = "RESULT:" + bingoLabel.Text;
                 // MessageBox.Show(message + " sent", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Thread.Sleep(100);
-                sendMessageToServer(message);
+                SendMessageToServer(message);
                 
             }
         }
