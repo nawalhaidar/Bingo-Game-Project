@@ -85,7 +85,7 @@ namespace BingoClient
             }
             else if (message == "WON")
             {
-                MessageBox.Show("Congratulations! You won!", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Congratulations! You won!", "Winner: Player " + playerNumber, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 gameEnded = true;
             }
             else if (message.StartsWith("TURN:"))
@@ -116,7 +116,7 @@ namespace BingoClient
             }
         }
 
-         private void SendMessageToServer(string message)
+        private void SendMessageToServer(string message)
         {
             byte[] data = Encoding.ASCII.GetBytes(message);
             stream.Write(data, 0, data.Length);
@@ -154,11 +154,6 @@ namespace BingoClient
                 button.BackColor = Color.HotPink;
                 button.Enabled = false;
 
-                string message = button.Text;
-                // byte[] data = Encoding.ASCII.GetBytes(message);
-                // stream.Write(data, 0, data.Length);
-                SendMessageToServer(message);
-
                 UpdateBingoLabel();
 
                 // if (bingoLabel.Text == "BINGO" && !gameEnded)
@@ -172,9 +167,14 @@ namespace BingoClient
                     //     btn.Enabled = false;
                     // }
                 // }
-                message = "RESULT:" + bingoLabel.Text;
+                string message = "RESULT:" + bingoLabel.Text;
                 // MessageBox.Show(message + " sent", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Thread.Sleep(100);
+                SendMessageToServer(message);
+
+                message = button.Text;
+                // byte[] data = Encoding.ASCII.GetBytes(message);
+                // stream.Write(data, 0, data.Length);
                 SendMessageToServer(message);
                 
             }
