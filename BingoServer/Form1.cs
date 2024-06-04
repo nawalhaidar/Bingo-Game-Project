@@ -138,6 +138,7 @@ namespace BingoServer
                 string result =  message.Split(':')[1];
                 this.scoreLabels[index].Text = result;
                 if (result == "BINGO"){
+                    SendMessageToStream(index, "WON");
                     BroadcastMessageExceptStream(index, "LOST");
                     lock (gameEndedLock)
                     {

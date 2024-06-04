@@ -77,7 +77,7 @@
             this.chatNameLabel.Location = new System.Drawing.Point(2*gridStartX + 5 * (buttonSize + buttonSpacing), 50);
             this.chatNameLabel.Name = "chatNameLabel";
             this.chatNameLabel.Size = new System.Drawing.Size(29, 13);
-            this.chatNameLabel.Font = new System.Drawing.Font("Segoe UI", 15, System.Drawing.FontStyle.Regular);
+            this.chatNameLabel.Font = new System.Drawing.Font("Segoe UI", 15, System.Drawing.FontStyle.Bold);
             this.chatNameLabel.Text = "Chat:";
             this.chatNameLabel.TabIndex = 1;
 

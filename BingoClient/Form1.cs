@@ -83,6 +83,11 @@ namespace BingoClient
                 MessageBox.Show("Oops :( You lost!", "You lost", MessageBoxButtons.OK, MessageBoxIcon.Stop);
                 gameEnded = true;
             }
+            else if (message == "WON")
+            {
+                MessageBox.Show("Congratulations! You won!", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                gameEnded = true;
+            }
             else if (message.StartsWith("TURN:"))
             {
                 int turn = int.Parse(message.Split(':')[1]);
@@ -102,11 +107,11 @@ namespace BingoClient
             {
                 MarkNumberOnGrid(message);
                 UpdateBingoLabel();
-                if (bingoLabel.Text == "BINGO" && !gameEnded)
-                {
-                    MessageBox.Show("Congratulations! You won!", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    gameEnded = true;
-                }
+                // if (bingoLabel.Text == "BINGO" && !gameEnded)
+                // {
+                //      MessageBox.Show("Congratulations! You won!", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                //     gameEnded = true;
+                // }
                 SendMessageToServer("RESULT:" + bingoLabel.Text);
             }
         }
@@ -150,23 +155,23 @@ namespace BingoClient
                 button.Enabled = false;
 
                 string message = button.Text;
-                byte[] data = Encoding.ASCII.GetBytes(message);
-                stream.Write(data, 0, data.Length);
+                // byte[] data = Encoding.ASCII.GetBytes(message);
+                // stream.Write(data, 0, data.Length);
+                SendMessageToServer(message);
 
                 UpdateBingoLabel();
 
-                if (bingoLabel.Text == "BINGO" && !gameEnded)
-                {
-                    MessageBox.Show("Congratulations! You won!", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    byte[] dataa = Encoding.ASCII.GetBytes("WON:" + playerNumber);
-                    stream.Write(dataa, 0, dataa.Length);
-                    gameEnded = true;
-                    foreach (var btn in buttons)
-                    {
-                        btn.Enabled = false;
-                    }
-                    gameEnded = true;
-                }
+                // if (bingoLabel.Text == "BINGO" && !gameEnded)
+                // {
+                    // MessageBox.Show("Congratulations! You won!", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    // byte[] dataa = Encoding.ASCII.GetBytes("WON:" + playerNumber);
+                    // stream.Write(dataa, 0, dataa.Length);
+                    // gameEnded = true;
+                    // foreach (var btn in buttons)
+                    // {
+                    //     btn.Enabled = false;
+                    // }
+                // }
                 message = "RESULT:" + bingoLabel.Text;
                 // MessageBox.Show(message + " sent", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Thread.Sleep(100);
