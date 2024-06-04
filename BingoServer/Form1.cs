@@ -131,20 +131,16 @@ namespace BingoServer
             }
             else if (message.StartsWith("RESULT:"))
             {
-                this.scoreLabels[index].Text = message.Split(':')[1];
-            }
-            else if(message.StartsWith("WON")){
-                int winner = int.Parse(message.Split(':')[1]);
-                for(int i=0; i<numberOfPlayers; i++){
-                    if (i+1!=winner){
-                        sendMessageToStream(i, "LOST");
-                    }
+                // MessageBox.Show("server recieved: "+ message + " , result is " + message.Split(':')[1], "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                string result =  message.Split(':')[1];
+                this.scoreLabels[index].Text = result;
+                if (result == "BINGO"){
+                    BroadcastMessageExceptStream(index, "LOST");
                 }
             }
             else
             {
-
-                BroadcastMessage(message);
+                BroadcastMessageExceptStream(index,message);
                 SwitchTurns();
             }
         }
@@ -163,6 +159,16 @@ namespace BingoServer
                 stream.Write(data, 0, data.Length);
             }
         }
+        private void BroadcastMessageExceptStream(int index, string message)
+        {
+            byte[] data = Encoding.ASCII.GetBytes(message);
+            for(int i=0; i<streams.Count(); i++){
+                if(i!=index){
+                    streams[i].Write(data, 0, data.Length);
+                }
+            }
+        }
+
 
         private void SwitchTurns()
         {

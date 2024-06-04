@@ -2,6 +2,7 @@ using System;
 using System.Drawing;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -101,11 +102,9 @@ namespace BingoClient
             {
                 MarkNumberOnGrid(message);
                 UpdateBingoLabel();
-                if (bingoLabel.Text == "BINGO")
+                if (bingoLabel.Text == "BINGO" && !gameEnded)
                 {
-                    MessageBox.Show("Congratulations! You won!", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    byte[] data = Encoding.ASCII.GetBytes("WON:"+playerNumber);
-                    stream.Write(data, 0, data.Length);
+                    MessageBox.Show("Congratulations! You won!", "Winner, 2", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     gameEnded = true;
                 }
                 sendMessageToServer("RESULT:" + bingoLabel.Text);
@@ -123,6 +122,7 @@ namespace BingoClient
             string chatMessage = chatTextBox.Text;
             string message = "CHAT:PLAYER" + playerNumber + ":" + chatMessage;
             sendMessageToServer(message);
+            chatTextBox.Text = "";
         }
 
         private void MarkNumberOnGrid(string number)
@@ -133,7 +133,7 @@ namespace BingoClient
                 {
                     if (button.Text == number)
                     {
-                        button.BackColor = Color.Red;
+                        button.BackColor = Color.HotPink;
                         button.Enabled = false;
                         break;
                     }
@@ -146,7 +146,7 @@ namespace BingoClient
             Button button = sender as Button;
             if (button != null)
             {
-                button.BackColor = Color.Red;
+                button.BackColor = Color.HotPink;
                 button.Enabled = false;
 
                 string message = button.Text;
@@ -155,9 +155,9 @@ namespace BingoClient
 
                 UpdateBingoLabel();
 
-                if (bingoLabel.Text == "BINGO")
+                if (bingoLabel.Text == "BINGO" && !gameEnded)
                 {
-                    MessageBox.Show("Congratulations! You won!", "Winner", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Congratulations! You won!", "Winner, 1", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     byte[] dataa = Encoding.ASCII.GetBytes("WON:" + playerNumber);
                     stream.Write(dataa, 0, dataa.Length);
                     gameEnded = true;
@@ -165,9 +165,13 @@ namespace BingoClient
                     {
                         btn.Enabled = false;
                     }
+                    gameEnded = true;
                 }
-
-                sendMessageToServer("RESULT:" + bingoLabel.Text);
+                message = "RESULT:" + bingoLabel.Text;
+                // MessageBox.Show(message + " sent", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Thread.Sleep(100);
+                sendMessageToServer(message);
+                
             }
         }
 
@@ -175,7 +179,7 @@ namespace BingoClient
         {
             foreach (Button button in buttons)
             {
-                if (button.BackColor != Color.Red)
+                if (button.BackColor != Color.HotPink)
                 {
                     button.Enabled = enable;
                 }
@@ -204,7 +208,7 @@ namespace BingoClient
                 bool rowComplete = true;
                 for (int j = 0; j < 5; j++)
                 {
-                    if (buttons[i, j].BackColor != Color.Red)
+                    if (buttons[i, j].BackColor != Color.HotPink)
                     {
                         rowComplete = false;
                         break;
@@ -226,7 +230,7 @@ namespace BingoClient
                 bool columnComplete = true;
                 for (int i = 0; i < 5; i++)
                 {
-                    if (buttons[i, j].BackColor != Color.Red)
+                    if (buttons[i, j].BackColor != Color.HotPink)
                     {
                         columnComplete = false;
                         break;
@@ -246,11 +250,11 @@ namespace BingoClient
             int diagonal2Complete = 1;
             for (int i = 0; i < 5; i++)
             {
-                if (buttons[i, i].BackColor != Color.Red)
+                if (buttons[i, i].BackColor != Color.HotPink)
                 {
                     diagonal1Complete = 0;
                 }
-                if (buttons[i, 4 - i].BackColor != Color.Red)
+                if (buttons[i, 4 - i].BackColor != Color.HotPink)
                 {
                     diagonal2Complete = 0;
                 }
